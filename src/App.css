@@ -1,0 +1,138 @@
+*{
+  padding: 0px;
+  margin: 0px;
+  box-sizing: border-box;
+  font-family: "PT Sans", serif;
+}
+
+.gradient-bg{
+  background: linear-gradient(135deg, #0033FF 0%, #977DFF 41%, #FFCCF2 100%);
+}
+
+.animated-text,
+.animated-logo {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeMoveUp 2s ease-out forwards;
+}
+
+.animated-text {
+  animation-delay: 0.2s;
+}
+
+.animated-logo {
+  animation-delay: 0.5s;
+}
+
+@keyframes fadeMoveUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.register{
+  position: absolute;
+  top: 2%;
+  left: 87%;
+  color: white;
+}
+
+.register:hover{
+  color: #0033FF;
+}
+
+.input-container {
+  position: relative;
+  margin-bottom: 20px;
+  width: 300px;
+}
+
+.input-box {
+  width: 100%;
+  padding: 8px 0;
+  border: none;
+  border-bottom: 2px solid white;
+  background: transparent;
+  outline: none;
+  font-size: 16px;
+  color: white;
+}
+
+.input-label {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(0%);
+  font-size: 16px;
+  color: white;
+  pointer-events: none;
+  transition: 0.3s ease all;
+}
+
+.input-label.focused {
+  top: 10px;
+  font-size: 14px;
+  color: #ffccf2;
+}
+
+.login-btn{
+  width: 100%;
+  padding: 8px 0;
+  border: none;
+  border-radius: 5px;
+  color: #977DFF;
+}
+
+.forgot-pass{
+  color: #ffffff;
+}
+
+.forgot-pass:hover{
+  color: #0033FF;
+}
+
+.userButton,
+.msgButton{
+  color: #ffffff;
+  background-color: transparent;
+  height: 50px;
+  width: 50px;
+  border: 0px;
+  border-radius: 50%;
+}
+
+.button_active{
+  background-color: #575757;
+}
+
+.userButton:hover,
+.msgButton:hover{
+  color: #27fff1;
+}
+
+.search-box{
+  position: absolute;
+  top: 68px;
+  left: 100px;
+}
+
+.profileFields:hover{
+  cursor: pointer;
+}
+
+.cameraicon{
+  position: absolute;
+  top: 230px;
+  left: 350px;
+}
+
+.check{
+  position: absolute;
+  top: 210px;
+  left: 330px;
+}
