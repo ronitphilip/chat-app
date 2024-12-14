@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
-import serverURL from "../serverURL";
+import { serverURL } from "../serverURL";
 
 // to fetch the user details from the server
 export const fetchUserData = createAsyncThunk('user,fetchUserData',async () => {

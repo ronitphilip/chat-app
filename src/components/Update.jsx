@@ -5,8 +5,8 @@ import '../App.css';
 import cameraicon from '../assets/camera.png'
 import check from '../assets/check.png'
 import { useNavigate } from "react-router-dom";
-import serverURL from "../redux/serverURL";
 import axios from "axios";
+import { baseURL } from "../redux/serverURL";
 
 const Update = ({ sideBar, userId }) => {
   const dispatch = useDispatch();
@@ -21,7 +21,7 @@ const Update = ({ sideBar, userId }) => {
 
   const [preview, setPreview] = useState("");
   const [changeImage,setChangeImage] = useState(false)
-  console.log(preview);
+  const [verifyEmail, setVerifyEmail] = useState("")
   
   // State for form data
   const [formData, setFormData] = useState({
@@ -33,7 +33,7 @@ const Update = ({ sideBar, userId }) => {
 
   useEffect(() => {
     if (formData.profilePic && typeof formData.profilePic === 'string') {
-      setPreview(`http://localhost:8000/uploads/${formData.profilePic}`);
+      setPreview(`${baseURL}/uploads/${formData.profilePic}`);
     } else if (formData.profilePic instanceof File) {
       setPreview(URL.createObjectURL(formData.profilePic));
     }
@@ -69,10 +69,10 @@ const Update = ({ sideBar, userId }) => {
     setChangeImage(true)
     if (file) {
       const uploadFormData = new FormData();
-      uploadFormData.append('profilePic', file);
+      uploadFormData.append('file', file);
   
       try {
-        const response = await axios.post(`http://localhost:8000/uploads`, uploadFormData, {
+        const response = await axios.post(`${baseURL}/uploads`, uploadFormData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -98,16 +98,13 @@ const Update = ({ sideBar, userId }) => {
   };
 
   return (
-    <div style={{ minHeight: "98vh", width: "30vw", backgroundColor: "#343434" }}>
+    <div className="bg-dark" style={{ minHeight: "100vh" }}>
       {!sideBar && (
         <>
-          <h2 className="text-light mt-2 ms-2 fw-bold">Profile</h2>
-          <div
-            style={{ minHeight: "92vh" }}
-            className="d-flex flex-column align-items-center justify-content-evenly"
-          >
+          <h2 className="text-light pt-2 ms-2 fw-bold">Profile</h2>
+          <div style={{ minHeight: "92vh" }} className="d-flex flex-column align-items-center justify-content-evenly" >
             {/* profile image */}
-            <img height={"200px"} width={"200px"} className="rounded-circle mx-auto" src={`http://localhost:8000/uploads/${formData.profilePic}`} alt="profile" />
+            <img height={"200px"} width={"200px"} className="rounded-circle mx-auto" src={`${baseURL}/uploads/${formData.profilePic}`} alt="profile" />
             {
               changeImage ? (
                 <button onClick={saveEdit} className="btn">
@@ -121,7 +118,7 @@ const Update = ({ sideBar, userId }) => {
             }
 
             <input
-              onChange={handleFileChange}
+              onChange={e=>{handleFileChange(e)}}
               style={{ display: "none" }}
               type="file"
               id="profilePic"

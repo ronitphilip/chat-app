@@ -121,6 +121,10 @@
   left: 100px;
 }
 
+.userSearch:focus{
+  border: 2px red;
+}
+
 .profileFields:hover{
   cursor: pointer;
 }
@@ -135,4 +139,17 @@
   position: absolute;
   top: 210px;
   left: 330px;
+}
+
+.userChatBox:hover{
+  background-color: #2d2d2d;
+}
+
+.typingBox:focus{
+  border: 0px;
+  outline: none;
+}
+
+.morebtn:focus{
+  border: 0px;
 }
