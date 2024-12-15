@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import background from '../assets/background.jpg';
+import { io } from 'socket.io-client';
+import defaultBackground from '../assets/background.jpg';
 import { baseURL, serverURL } from '../redux/serverURL';
 import '../App.css';
+import SplashScreen from '../pages/SplashScreen'
 import { updateUserDetails } from '../redux/slices/chatSlice';
 import axios from 'axios';
 
@@ -15,17 +17,56 @@ const ChatSpace = ({ userId, currentChat }) => {
   const [extraDisplay, setExtraDisplay] = useState('none');
   const [backgroundImage, setBackgroundImage] = useState(true)
   const [bgImagename, setBgImagename] = useState('')
+  const [messages, setMessages] = useState([]);
+  console.log(messages);
   
   const { allUsers } = useSelector((state) => state.chatReducer);
-  const currentUser = allUsers.filter((user) => user.id === currentChat);
-  const mainUser = allUsers.find((user) => user.id == userId)
+  const currentUser = allUsers?.filter((user) => user.id == currentChat);
+  const mainUser = allUsers?.find((user) => user.id == userId)
+  const socket = io(baseURL);
 
   useEffect(() => {
-    if (mainUser) {
-      setBgImagename(mainUser.chatWallpaper || '');
+    if (mainUser && mainUser.chatWallpaper) {
+      setBgImagename(mainUser.chatWallpaper);
     }
-  }, [mainUser]);
-console.log(bgImagename);
+  }, [mainUser]);  
+
+  useEffect(() => {
+    // Join user's room
+    socket.emit('login', userId);
+    console.log(`User ${userId} logged in and joined room`);
+  
+    // Listen for incoming messages
+    socket.on('receiveMessage', ({ fromUserId, message }) => {
+      console.log(`Received message from ${fromUserId}: ${message}`);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { senderId: fromUserId, text: message, type: 'incoming' },
+      ]);
+    });
+  
+    // Check if user is connected
+    socket.on('connect', () => {
+      console.log(`User ${userId} connected with socket ID: ${socket.id}`);
+    });
+  
+    return () => {
+      socket.disconnect(); // Cleanup the socket connection
+    };
+  }, [socket, userId]);
+
+  
+  const sendMessage = () => {
+    if (messageInput.trim()) {
+      const newMessage = { senderId: userId, text: messageInput, type: 'outgoing' };
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+
+      // Emit the message to the server
+      socket.emit('sendMessage', { toUserId: currentChat, message: messageInput });
+
+      setMessageInput(''); // Clear the input field
+    }
+  };
 
   const toggleMoreButton = (value) => {
     setMorebtnActive(value);
@@ -35,7 +76,6 @@ console.log(bgImagename);
 
   const handleUploadBG = async (e) => {
     const file = e.target.files[0];
-    setBgImagename(file.name);
     setBackgroundImage(false);
   
     if (file) {
@@ -48,6 +88,7 @@ console.log(bgImagename);
             'Content-Type': 'multipart/form-data',
           },
         });
+        setBgImagename(response.data.fileName);
       } catch (err) {
         console.error('Error uploading file:', err);
       }
@@ -79,7 +120,7 @@ console.log(bgImagename);
       style={{
         height: '100vh',
         width: '66vw',
-        backgroundImage: `url(${baseURL}/uploads/${bgImagename})`,
+        backgroundImage: mainUser?.chatWallpaper ? `url(${baseURL}/uploads/${bgImagename})` : `url(${defaultBackground})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -133,6 +174,7 @@ console.log(bgImagename);
                       type="file" 
                       id='bgImage'
                       name='bgImage'
+                      accept="image/*"
                       style={{display:'none'}}
                     />
                   </div>
@@ -141,21 +183,46 @@ console.log(bgImagename);
             </div>
 
             {/* Chat Body */}
-              <div>
-              </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
+              {messages.map((msg, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    justifyContent: msg.type === 'outgoing' ? 'flex-end' : 'flex-start',
+                    marginBottom: '10px',
+                  }}
+                >
+                  <div
+                    style={{
+                      maxWidth: '60%',
+                      padding: '10px',
+                      borderRadius: '10px',
+                      backgroundColor: msg.type === 'outgoing' ? '#4caf50' : '#f1f1f1',
+                      color: msg.type === 'outgoing' ? 'white' : 'black',
+                    }}
+                  >
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+            </div>
 
             {/* Chat Footer */}
-            <div className="d-flex justify-content-between px-3 py-3" style={{ height: '70px' }} >
-              <button style={{height: '40px', width: '40px', backgroundColor: '#464646', }} className="rounded-circle border-0" >
-                <i className="fa-solid fa-plus text-light"></i>
-              </button>
+            <div className="d-flex justify-content-between px-3 py-3" style={{ height: '70px' }}>
               <input
                 style={{ backgroundColor: '#f1f1f1' }}
                 className="w-100 mx-3 rounded-pill px-3 border-0 typingBox"
                 type="text"
-                placeholder={messageInput ? '' : 'Type a message'}
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                placeholder="Type a message"
               />
-              <button style={{height: '40px', width: '40px', backgroundColor: '#464646', }} className="rounded-circle border-0" >
+              <button
+                style={{ height: '40px', width: '40px', backgroundColor: '#464646' }}
+                className="rounded-circle border-0"
+                onClick={sendMessage}
+              >
                 <i className="fa-regular fa-paper-plane text-light"></i>
               </button>
             </div>
@@ -163,7 +230,9 @@ console.log(bgImagename);
           </div>
         ))
       ) : (
-        <div>New Chat</div>
+        <div>
+          <SplashScreen/>
+        </div>
       )}
       
     </div>

@@ -153,3 +153,11 @@
 .morebtn:focus{
   border: 0px;
 }
+
+.message.incoming {
+  align-self: flex-start;
+}
+
+.message.outgoing {
+  align-self: flex-end;
+}
