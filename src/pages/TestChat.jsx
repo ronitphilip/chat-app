@@ -1,83 +1,77 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import io from 'socket.io-client';
-import { baseURL, serverURL } from '../redux/serverURL';
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { io } from 'socket.io-client';
 import defaultBackground from '../assets/background.jpg';
+import { baseURL, serverURL } from '../redux/serverURL';
+import '../App.css';
 import SplashScreen from '../pages/SplashScreen'
-import axios from 'axios';
 import { updateUserDetails } from '../redux/slices/chatSlice';
+import axios from 'axios';
 
-const socket = io(baseURL);
+const ChatSpace = ({ userId, currentChat }) => {
 
-const ChatSpace = ({userId, currentChat}) => {
-
-  const [isOnline, setIsOnline] = useState({});
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([]);
-  const [filteredMessages, setFilteredMessages] = useState([]);
+  const dispatch = useDispatch()
+  const [isOnline, setIsOnline] = useState(false);
+  const [messageInput, setMessageInput] = useState('');
   const [morebtnActive, setMorebtnActive] = useState(false);
   const [extraDisplay, setExtraDisplay] = useState('none');
   const [backgroundImage, setBackgroundImage] = useState(true)
   const [bgImagename, setBgImagename] = useState('')
-
+  const [messages, setMessages] = useState([]);
+  console.log(messages);
+  
   const { allUsers } = useSelector((state) => state.chatReducer);
   const currentUser = allUsers?.filter((user) => user.id == currentChat);
   const mainUser = allUsers?.find((user) => user.id == userId)
+  const socket = io(baseURL);
 
   useEffect(() => {
     if (mainUser && mainUser.chatWallpaper) {
       setBgImagename(mainUser.chatWallpaper);
     }
-  }, [mainUser]);
+  }, [mainUser]);  
 
   useEffect(() => {
-      if (userId.trim()) {
-          socket.emit('register', userId);
-      }
-      socket.on('user_status_change', ({ userId, status }) => {
-        setIsOnline((prevStatuses) => ({
-            ...prevStatuses,
-            [userId]: status === 'online',
-        }));
-      });
-      socket.on('private_message', (data) => {
-        setMessages((prevMessages) => [...prevMessages, data]);
-      });
-      return () => {
-        socket.off('user_status_change');
-        socket.off('private_message');
-      };
-  }, [userId]);
+    // Join user's room
+    socket.emit('login', userId);
+    console.log(`User ${userId} logged in and joined room`);
+  
+    // Listen for incoming messages
+    socket.on('receiveMessage', ({ fromUserId, message }) => {
+      console.log(`Received message from ${fromUserId}: ${message}`);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { senderId: fromUserId, text: message, type: 'incoming' },
+      ]);
+    });
+  
+    // Check if user is connected
+    socket.on('connect', () => {
+      console.log(`User ${userId} connected with socket ID: ${socket.id}`);
+    });
+  
+    return () => {
+      socket.disconnect(); // Cleanup the socket connection
+    };
+  }, [socket, userId]);
 
-  useEffect(() => {
-    const filtered = messages.filter(
-      (msg) =>
-        (msg.sender == userId && msg.receiver == currentChat) ||
-        (msg.sender == currentChat && msg.receiver == userId)
-    );
-    setFilteredMessages(filtered);
-  }, [messages, currentChat, userId]);
+  
+  const sendMessage = () => {
+    if (messageInput.trim()) {
+      const newMessage = { senderId: userId, text: messageInput, type: 'outgoing' };
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
 
-  const sendMessage = (e) => {
-      e.preventDefault();
-      if (message.trim() && userId.trim() && `${currentChat}`.trim()) {
-          const messageData = {
-              sender: userId,
-              receiver: `${currentChat}`,
-              messageBody: message,
-          };
-          socket.emit('private_message', messageData);
-          setMessage(''); 
-      }
+      // Emit the message to the server
+      socket.emit('sendMessage', { toUserId: currentChat, message: messageInput });
+
+      setMessageInput(''); // Clear the input field
+    }
   };
 
   const toggleMoreButton = (value) => {
     setMorebtnActive(value);
     setExtraDisplay(value ? '' : 'none');
     setBackgroundImage(value)
-    if (mainUser && mainUser.chatWallpaper) {
-      setBgImagename(mainUser.chatWallpaper);
-    }
   };
 
   const handleUploadBG = async (e) => {
@@ -120,9 +114,9 @@ const ChatSpace = ({userId, currentChat}) => {
       console.error('Error updating user details:', err);
     }
   };
-
-    return (
-      <div
+  
+  return (
+    <div
       style={{
         height: '100vh',
         width: '66vw',
@@ -132,10 +126,10 @@ const ChatSpace = ({userId, currentChat}) => {
         backgroundRepeat: 'no-repeat',
         flex: 1,
       }}
-      >
-        {currentUser.length > 0 ? (
+    >
+      {currentUser.length > 0 ? (
         currentUser.map((user) => (
-          <div key={user.id} className=" text-light h-100 d-flex flex-column justify-content-between">
+          <div key={user.id} className="h-100 d-flex flex-column justify-content-between">
             {/* Chat Header */}
             <div className="d-flex justify-content-between px-3" style={{ height: '70px', backgroundColor: '#464646', }} >
               {/* User Info */}
@@ -143,8 +137,8 @@ const ChatSpace = ({userId, currentChat}) => {
                 <img style={{ width: '55px', height : '55px' }} className="rounded-circle my-auto" src={`${baseURL}/uploads/${user.profilePic}`} alt="User" />
                 <div className="my-auto ps-3">
                   <h5 className="mb-0 text-light">{user.userName}</h5>
-                  <p className={`mb-0 ${isOnline[currentChat] ? 'text-success' : 'text-secondary'}`}>
-                      {isOnline[currentChat] ? 'Online' : 'Offline'}
+                  <p className={`mb-0 ${isOnline ? 'text-success' : 'text-secondary'}`}>
+                    {isOnline ? 'Online' : 'Offline'}
                   </p>
                 </div>
               </div>
@@ -189,48 +183,43 @@ const ChatSpace = ({userId, currentChat}) => {
             </div>
 
             {/* Chat Body */}
-            <div className="chatbody px-5 d-flex flex-column">
-              {filteredMessages.length == 0 ? (
-                <p className="text-center fs-4">No messages yet!</p>
-              ) : (
-                filteredMessages.map((msg, index) => (
+            <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
+              {messages.map((msg, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    justifyContent: msg.type === 'outgoing' ? 'flex-end' : 'flex-start',
+                    marginBottom: '10px',
+                  }}
+                >
                   <div
-                    key={index}
-                    className={`d-flex align-items-center ${
-                      msg.sender == userId ? "justify-content-end" : "justify-content-start"
-                    }`}
-                    style={{ margin: "5px 0" }}
+                    style={{
+                      maxWidth: '60%',
+                      padding: '10px',
+                      borderRadius: '10px',
+                      backgroundColor: msg.type === 'outgoing' ? '#4caf50' : '#f1f1f1',
+                      color: msg.type === 'outgoing' ? 'white' : 'black',
+                    }}
                   >
-                    {msg.sender != userId && (
-                      <img
-                        height="40px"
-                        width="40px"
-                        className="rounded-circle"
-                        src={`${baseURL}/uploads/${user.profilePic}`}
-                        alt="User"
-                        style={{ marginRight: "10px" }}
-                      />
-                    )}
-                    <div className={`chat-bubble ${msg.sender == userId ? "outgoing" : "incoming"}`}>
-                      {msg.messageBody}
-                    </div>
+                    {msg.text}
                   </div>
-                ))
-              )}
+                </div>
+              ))}
             </div>
 
             {/* Chat Footer */}
-            <div className="d-flex justify-content-between px-3 py-3">
+            <div className="d-flex justify-content-between px-3 py-3" style={{ height: '70px' }}>
               <input
                 style={{ backgroundColor: '#f1f1f1' }}
                 className="w-100 mx-3 rounded-pill px-3 border-0 typingBox"
                 type="text"
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
                 placeholder="Type a message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                />
+              />
               <button
-                style={{ height: '40px', width: '40px', backgroundColor: '#007bff' }}
+                style={{ height: '40px', width: '40px', backgroundColor: '#464646' }}
                 className="rounded-circle border-0"
                 onClick={sendMessage}
               >
@@ -244,9 +233,10 @@ const ChatSpace = ({userId, currentChat}) => {
         <div>
           <SplashScreen/>
         </div>
-      )}   
-      </div>
-    );
+      )}
+      
+    </div>
+  );
 };
 
 export default ChatSpace;

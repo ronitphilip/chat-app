@@ -38,7 +38,7 @@ const Contacts = ({ sideBar, userId, setCurrentChat }) => {
       return prevActiveUsers;
     })
     setSearchUser("")
-    setCurrentChat(user.id)
+    setCurrentChat(user?.id)
   };
 
   return (

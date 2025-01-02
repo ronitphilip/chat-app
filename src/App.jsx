@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import Auth from './pages/Auth'
 import { Toaster } from 'react-hot-toast'
 import ResPas from './pages/ResPas'
+import TestChat from './pages/TestChat'
 
 function App() {
 
@@ -17,6 +18,7 @@ function App() {
       <Route path='/register' element={<Auth insideRegister={true}/>} />
       <Route path='/respas' element={<ResPas/>} />
       <Route path="/chat" element={<ChatApp />} />
+      <Route path="/testchat" element={<TestChat />} />
       </Routes>
     </>
   )
