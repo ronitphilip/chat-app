@@ -5,7 +5,6 @@ import ChatSpace from '../components/ChatSpace'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { fetchUserData } from "../redux/slices/chatSlice";
-import TestChat from './TestChat'
 
 const ChatApp = () => {
 

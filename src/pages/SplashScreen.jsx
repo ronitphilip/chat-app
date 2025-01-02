@@ -7,7 +7,7 @@ const SplashScreen = () => {
       <>
           <div style={{minHeight:'100vh'}} className='gradient-bg d-flex flex-column justify-content-center align-items-center'>
             <img className="animated-logo" src={logo} alt="logo" />
-            <h1 className='animated-text text-light'>Welcome to My Website</h1>
+            <h1 className='animated-text text-light'>Convo</h1>
           </div>
       </>
     )
