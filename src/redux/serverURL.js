@@ -1,4 +1,4 @@
-const serverURL = 'http://localhost:8000/api';
-const baseURL = 'http://localhost:8000';
+const serverURL = 'https://chat-server-wfoo.onrender.com/api';
+const baseURL = 'https://chat-server-wfoo.onrender.com';
 
 export { serverURL, baseURL };
